@@ -1,9 +1,15 @@
 #include <iostream>
+#include <string>
 #include <signal.h>
 #include "TCPClient.h"
+#include <time.h>
 
 TCPClient tcp;
-
+#ifdef _WIN32
+#define  TCP_Sleep(x) Sleep(x)
+#else
+#define  TCP_Sleep(x) sleep(x/1000)
+#endif
 void sig_exit(int s)
 {
 	tcp.exit();
@@ -24,7 +30,7 @@ int main(int argc, char *argv[])
 		{
 			cout << "Server Response:" << rec << endl;
 		}
-		sleep(1);
+		TCP_Sleep(1000);
 	}
 	return 0;
 }
