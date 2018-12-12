@@ -19,11 +19,20 @@
     </ProjectConfiguration>
   </ItemGroup>
   <ItemGroup>
+    <ClInclude Include="..\..\src\CrossPlatform.h" />
+    <ClInclude Include="..\..\src\CrossPlatformUtil.h" />
+    <ClInclude Include="..\..\src\OSocket.h" />
     <ClInclude Include="..\..\src\TCPClient.h" />
+    <ClInclude Include="..\..\src\Wrap.h" />
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="..\..\example-client\client.cpp" />
+    <ClCompile Include="..\..\src\OSocket.cpp" />
+    <ClCompile Include="..\..\src\OWin32Socket.cpp" />
     <ClCompile Include="..\..\src\TCPClient.cpp" />
+  </ItemGroup>
+  <ItemGroup>
+    <None Include="ClassDiagram.cd" />
   </ItemGroup>
   <PropertyGroup Label="Globals">
     <VCProjectVersion>15.0</VCProjectVersion>
@@ -96,7 +105,7 @@
       <WarningLevel>Level3</WarningLevel>
       <Optimization>Disabled</Optimization>
       <SDLCheck>true</SDLCheck>
-      <PreprocessorDefinitions>WIN32;_DEBUG;_CONSOLE;_WINSOCK_DEPRECATED_NO_WARNINGS;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <PreprocessorDefinitions>WIN32;_DEBUG;_CONSOLE;_WINSOCK_DEPRECATED_NO_WARNINGS;_CRT_SECURE_NO_WARNINGS;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <ConformanceMode>true</ConformanceMode>
       <PrecompiledHeaderFile>
       </PrecompiledHeaderFile>

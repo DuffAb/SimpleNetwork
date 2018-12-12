@@ -1,41 +1,32 @@
 #ifndef TCP_CLIENT_H
 #define TCP_CLIENT_H
 
-#include <iostream>
-#include <stdio.h>
-#include <stdlib.h>
-#include <string.h>
-#include <vector>
-
-#ifdef _WIN32
-#include <WinSock2.h>
-#include <iostream>
-#include <string.h>
-typedef SOCKET SocketHandle;
-#elif __linux__	// linux
-#include <unistd.h>
-#include <sys/types.h>
-#include <sys/socket.h>
-#include <netinet/in.h>
-#include <arpa/inet.h>
-#include <netdb.h>
-typedef int SocketHandle;
-#endif
-
-
-
-
+#include "CrossPlatform.h"
+#include "OSocket.h"
+#include "Wrap.h"
 using namespace std;
+
+class TCPCli : public OTCPSocketBase
+{
+public:
+	TCPCli();
+	~TCPCli();
+
+	bool StartEchoCli();
+};
+
+
 class TCPClient
 {
 private:
-	SocketHandle sock;
+	SocketHandle _sock;
 	std::string address;
-	int port;
-	struct sockaddr_in server;
+	int _ServerPort;
+	struct sockaddr_in _ServerAddr;
 public:
 	TCPClient();
 	bool setup(string address, int port);
+	bool SetUpWithHostName(const char* hostname, const char* servname, const char* proto);
 	bool Send(string data);
 	string receive(int size = 4096);
 	string read();

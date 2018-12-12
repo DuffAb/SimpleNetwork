@@ -1,36 +1,30 @@
 #ifndef TCP_SERVER_H
 #define TCP_SERVER_H
 
-#include <iostream>
-#include <stdio.h>
-#include <stdlib.h>
-#include <string.h>
-#include <vector>
-#ifdef _WIN32
-#include <WinSock2.h>
-#include <ws2tcpip.h>
-typedef SOCKET SocketHandle;
-#elif __linux__	// linux
-#include <unistd.h>
-#include <sys/types.h> 
-#include <sys/socket.h>
-#include <netinet/in.h>
-#include <arpa/inet.h>
-#include <pthread.h>
-typedef int SocketHandle;
-#endif
-
-
+#include "CrossPlatform.h"
+#include "OSocket.h"
 using namespace std;
 
-#define MAXPACKETSIZE 4096
+class TCPSrv : public OTCPSocketBase
+{
+public:
+	TCPSrv();
+	~TCPSrv();
 
+	bool StartEchoSrv();
+};
+
+#define MAXPACKETSIZE 4096
 class TCPServer
 {
 public:
 	SocketHandle sockfd, newsockfd, n, pid;
-	struct sockaddr_in serverAddress;
-	struct sockaddr_in clientAddress;
+	int _Port;
+	
+	string _LocalAddrIPv4;
+	struct sockaddr_in _localAddrIPv4;
+	struct sockaddr_in _clientAddrIPv4;
+
 #ifdef _WIN32
 	DWORD     _dThreadId;
 	HANDLE    serverThread;

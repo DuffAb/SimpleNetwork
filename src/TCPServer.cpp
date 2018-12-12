@@ -1,13 +1,60 @@
 #include "TCPServer.h" 
-
+#include "Wrap.h"
 #ifdef _WIN32
 #pragma comment(lib,"ws2_32.lib")
-#define  TCP_Close(x) closesocket(x)
-#define  TCP_Error(x) printf(x)
-#elif __linux__	// linux
-#define  TCP_Close(x) close(x)
-#define  TCP_Error(x) herror(x)
 #endif
+
+#ifdef _WIN32
+
+#endif
+
+TCPSrv::TCPSrv()
+{
+}
+
+TCPSrv::~TCPSrv()
+{
+}
+
+bool TCPSrv::StartEchoSrv()
+{
+	OBindParams obp;
+	obp._Address = "";
+	obp._Port = 11999;
+	OBindLocalAddr(&obp);
+	OListen();
+	SocketHandle clientfd;
+	while (true)
+	{
+		size_t n = 0;
+		if ((clientfd = OAccept()) < 0)
+		{
+			if (errno == EINTR)// 自己重启被中断的系统调用
+			{
+				continue;
+			}
+			else
+			{
+				return false;
+			}
+		}
+		char buf[4096];
+		while ((n = recv(clientfd, buf, 4096, 0)) > 0)
+		{
+			if (buf[0] == 'q')
+			{
+				break;
+			}
+			fputs(buf, stdout);
+			send(clientfd, buf, 4096, 0);
+		}
+	}
+	
+	return true;
+}
+
+#if 0
+
 
 string TCPServer::Message;
 
@@ -56,15 +103,16 @@ void * TCPServer::Task(void * arg)
 #endif
 
 
-
 void TCPServer::setup(int port)
 {
+
 	sockfd = socket(AF_INET, SOCK_STREAM, 0);
-	memset(&serverAddress, 0, sizeof(serverAddress));
-	serverAddress.sin_family = AF_INET;
-	serverAddress.sin_addr.s_addr = htonl(INADDR_ANY);
-	serverAddress.sin_port = htons(port);
-	bind(sockfd, (struct sockaddr *)&serverAddress, sizeof(serverAddress));
+	memset(&_localAddrIPv4, 0, sizeof(_localAddrIPv4));
+	_localAddrIPv4.sin_family = AF_INET;
+	_localAddrIPv4.sin_addr.s_addr = htonl(INADDR_ANY);
+	_localAddrIPv4.sin_port = htons(port);
+
+	bind(sockfd, (struct sockaddr *)&_localAddrIPv4, sizeof(_localAddrIPv4));
 	listen(sockfd, 5);
 }
 
@@ -73,9 +121,9 @@ string TCPServer::receive()
 	string str;
 	while (1)
 	{
-		socklen_t sosize = sizeof(clientAddress);
-		newsockfd = accept(sockfd, (struct sockaddr*)&clientAddress, &sosize);
-		str = inet_ntoa(clientAddress.sin_addr);
+		socklen_t sosize = sizeof(_clientAddrIPv4);
+		newsockfd = accept(sockfd, (struct sockaddr*)&_clientAddrIPv4, &sosize);
+		str = inet_ntoa(_clientAddrIPv4.sin_addr);
 #ifdef _WIN32
 		serverThread = CreateThread(0, 0, Task, this, 0, &_dThreadId);
 #elif __linux__
@@ -107,3 +155,4 @@ void TCPServer::clean()
 	memset(msg, 0, MAXPACKETSIZE);
 }
 
+#endif

@@ -1,6 +1,9 @@
 #include <iostream>
 #include <time.h>
+#include "Wrap.h"
 #include "TCPServer.h"
+#if 0
+
 
 TCPServer tcp;
 
@@ -31,7 +34,6 @@ void * loop(void * m)
 	cout << "running loop function...\n";
 	while (1)
 	{
-		cout << "running loop function..." << ncount++ << endl;
 		srand(time(NULL));
 		char ch = 'a' + rand() % 26;
 		string s(1, ch);
@@ -48,9 +50,37 @@ void * loop(void * m)
 }
 #endif
 
+#endif
 
 int main()
-{
+{	
+	int mode = 0;
+	TCPSrv srv4;
+	TCPSrv srv6;
+	printf("select server mode: \n"
+		"\t0: echo IPv4 server\n"
+		"\t1: echo IPv6 server\n"
+		"\t2: unknow now\n");
+
+	if (scanf("%d", &mode))
+	{
+		switch (mode)
+		{
+		case 0:
+			srv4.StartEchoSrv();
+			break;
+		case 1:
+			srv6.StartEchoSrv();
+			break;
+		default:
+			break;
+		}
+	}
+
+#if 0
+
+
+
 #ifdef _WIN32
 	DWORD     _dThreadId;
 	HANDLE    _hThread;
@@ -68,5 +98,9 @@ int main()
 	{
 		tcp.receive();
 	}
+
+#endif
+
+
 	return 0;
 }
