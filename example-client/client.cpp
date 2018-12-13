@@ -24,21 +24,28 @@ int main(int argc, char *argv[])
 {
 	int mode = 0;
 	TCPCli cli4;
-	TCPCli cli6;
+	TCPCli cli6(FamilyType_IPV6);
 	printf("select client mode: \n"
 		"\t0: echo IPv4 client\n"
 		"\t1: echo IPv6 client\n"
 		"\t2: unknow now\n");
-
+	OBindParams obp;
+	
+	obp._Port = 11999;
 	if (scanf("%d", &mode))
 	{
 		switch (mode)
 		{
 		case 0:
-			cli4.StartEchoCli();
+			obp._Address = "192.168.200.118";
+			//obp._Address = "DESKTOP-CTQ37B5";
+			//obp._Address = "127.0.0.1";
+			cli4.StartEchoCli(&obp);
 			break;
 		case 1:
-			cli6.StartEchoCli();
+			//obp._Address = "DESKTOP-CTQ37B5";
+			obp._Address = "0:0:0:0:0:0:0:1";
+			cli6.StartEchoCli(&obp);
 			break;
 		default:
 			break;

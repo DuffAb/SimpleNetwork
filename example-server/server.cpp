@@ -1,7 +1,7 @@
 #include <iostream>
 #include <time.h>
-#include "Wrap.h"
-#include "TCPServer.h"
+#include "../src/Wrap.h"
+#include "../src/TCPServer.h"
 #if 0
 
 
@@ -56,21 +56,31 @@ int main()
 {	
 	int mode = 0;
 	TCPSrv srv4;
-	TCPSrv srv6;
+	TCPSrv srv6(FamilyType_IPV6);
 	printf("select server mode: \n"
-		"\t0: echo IPv4 server\n"
-		"\t1: echo IPv6 server\n"
-		"\t2: unknow now\n");
-
+		"\t0: echo IPv4 server blocking I/O\n"
+		"\t1: echo IPv6 server blocking I/O\n"
+		"\t2: echo IPv4 server noblocking I/O\n"
+		"\t3: echo IPv6 server noblocking I/O\n"
+		"\t4: echo IPv4 server I/O reuse (select and poll)\n"
+		"\t5: echo IPv6 server I/O reuse (select and poll)\n"
+		"\t6: echo IPv4 server SIG I/O\n"
+		"\t7: echo IPv6 server SIG I/O\n"
+		"\t8: echo IPv4 server asynchronization I/O (POXI's aio_xxx function)\n"
+		"\t9: echo IPv6 server asynchronization I/O (POXI's aio_xxx function)\n"
+		"\t?: unknow now\n");
+	OBindParams obp;
+	obp._Address = "";
+	obp._Port = 11999;
 	if (scanf("%d", &mode))
 	{
 		switch (mode)
 		{
 		case 0:
-			srv4.StartEchoSrv();
+			srv4.StartEchoSrv(&obp);
 			break;
 		case 1:
-			srv6.StartEchoSrv();
+			srv6.StartEchoSrv(&obp);
 			break;
 		default:
 			break;

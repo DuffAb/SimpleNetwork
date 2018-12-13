@@ -5,14 +5,14 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
-#include <io.h>
 #include <vector>
 
 #ifdef _WIN32
 #include <WinSock2.h>
 #include <ws2tcpip.h>
 #include <basetsd.h>
-
+#include <signal.h>
+#include <io.h>
 #elif __linux__
 #include <unistd.h>
 #include <sys/types.h>

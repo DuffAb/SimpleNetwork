@@ -28,7 +28,7 @@ OBerkleySocket::~OBerkleySocket()
 }
 
 
-int32_t OBerkleySocket::OGetSockname(sockaddr * pSaOut, int* salen)
+int32_t OBerkleySocket::OGetSockname(sockaddr * pSaOut, socklen_t* salen)
 {
 	// 用于获取与某个套接字关联的本地协议地址  // 获得内核选择的临时端口
 	int32_t i = getsockname(_TheSocket, (sockaddr*)pSaOut, salen);
@@ -42,9 +42,16 @@ sockaddr_in OTCPSocketBase::OSetAddr4(OBindParams * pBindParams)
 	memset(&sa4, 0, sizeof(sa4));
 	sa4.sin_family = AF_INET;
 	sa4.sin_port = htons(pBindParams->_Port);
-	if (!OIp4ToSockaddr(pBindParams->_Address.c_str(), &sa4))
+	if (pBindParams->_Address.empty())
 	{
-		OGetHostByNameV4(pBindParams->_Address.c_str(), (struct sockaddr *)&sa4);
+		sa4.sin_addr.s_addr = htonl(INADDR_ANY);
+	}
+	else
+	{
+		if (!OIp4ToSockaddr(pBindParams->_Address.c_str(), &sa4))
+		{
+			OGetHostByNameV4(pBindParams->_Address.c_str(), (struct sockaddr *)&sa4);
+		}
 	}
 	
 	return sa4;
@@ -130,10 +137,15 @@ SocketHandle OTCPSocketBase::OAccept()
 
 	// 对客户地址协议不感兴趣，后两个参数设置位 NULL
 	_ClientSocket = accept(_TheSocket, NULL, 0);
+	if (errno == EPROTO) // 协议错误
+	{
+	}else if (errno == ECONNABORTED)// 软件引起的连接中止
+	{
+	}
 
 	// 与客户连接建立，getsockname可以返回由内核赋予该连接的本地IP地址
 	sockaddr sa;
-	int namelen = sizeof(sa);
+	socklen_t namelen = sizeof(sa);
 	getsockname(_ClientSocket, &sa, &namelen);
 
 	return _ClientSocket;

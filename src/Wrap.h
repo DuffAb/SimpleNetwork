@@ -274,13 +274,13 @@ static void wrap_bzero(void* dest, size_t nbytes)
 }
 
 // 将指定数目的字节从源字节串移到目标字节串
-static void bcopy(const void*src, void* dest, size_t nbytes)
+static void Obcopy(const void*src, void* dest, size_t nbytes)
 {
 	;
 }
 
 // 比较两个任意的字节串，若相同则返回值为 0，否则返回非 0
-static int bcmp(const void* ptr1, const void* ptr2, size_t nbytes)
+static int Obcmp(const void* ptr1, const void* ptr2, size_t nbytes)
 {
 	return 0;
 }
@@ -625,7 +625,7 @@ static ssize_t wrap_readn(int fd, void *vptr, size_t n)
 	ptr = (char	*)vptr;
 	nleft = n;
 	while (nleft > 0) {
-		if ((nread = _read(fd, ptr, nleft)) < 0) {
+		if ((nread = UW_Read(fd, ptr, nleft)) < 0) {
 			if (errno == EINTR)
 				nread = 0;		/* and call read() again */
 			else

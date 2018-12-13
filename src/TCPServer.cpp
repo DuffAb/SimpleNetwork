@@ -4,25 +4,29 @@
 #pragma comment(lib,"ws2_32.lib")
 #endif
 
-#ifdef _WIN32
-
-#endif
+void sig_child(int signo);
 
 TCPSrv::TCPSrv()
 {
+}
+
+TCPSrv::TCPSrv(FamilyType ft)
+{
+	_AF_XXX = ft;
 }
 
 TCPSrv::~TCPSrv()
 {
 }
 
-bool TCPSrv::StartEchoSrv()
+bool TCPSrv::StartEchoSrv(OBindParams* obp)
 {
-	OBindParams obp;
-	obp._Address = "";
-	obp._Port = 11999;
-	OBindLocalAddr(&obp);
+	OSIGParams osp;
+	OBindLocalAddr(obp);
 	OListen();
+	osp.signo = O_SIGCHLD;
+	osp.handler = sig_child;
+	OSetSIGHandler(&osp);
 	SocketHandle clientfd;
 	while (true)
 	{
@@ -35,10 +39,13 @@ bool TCPSrv::StartEchoSrv()
 			}
 			else
 			{
+				std::cout << "accept errror \n";
 				return false;
 			}
 		}
+
 		char buf[4096];
+		memset(buf, 0, 4096);
 		while ((n = recv(clientfd, buf, 4096, 0)) > 0)
 		{
 			if (buf[0] == 'q')
@@ -47,7 +54,28 @@ bool TCPSrv::StartEchoSrv()
 			}
 			fputs(buf, stdout);
 			send(clientfd, buf, 4096, 0);
+			memset(buf, 0, 4096);
 		}
+
+#if 0
+		pid_t pid;
+		if ((pid = fork()) == 0)
+		{
+			close(_TheSocket);
+			char buf[4096];
+			memset(buf, 0, 4096);
+			while ((n = recv(clientfd, buf, 4096, 0)) > 0)
+			{
+				if (buf[0] == 'q')
+				{
+					break;
+				}
+				fputs(buf, stdout);
+				send(clientfd, buf, 4096, 0);
+				memset(buf, 0, 4096);
+			}
+		}
+#endif
 	}
 	
 	return true;

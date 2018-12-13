@@ -10,9 +10,10 @@ class TCPCli : public OTCPSocketBase
 {
 public:
 	TCPCli();
+	TCPCli(FamilyType ft);
 	~TCPCli();
 
-	bool StartEchoCli();
+	bool StartEchoCli(OBindParams* obp);
 };
 
 

@@ -10,19 +10,23 @@ TCPCli::TCPCli()
 {
 }
 
+TCPCli::TCPCli(FamilyType ft)
+{
+	_AF_XXX = ft;
+}
+
 TCPCli::~TCPCli()
 {
 }
 
-bool TCPCli::StartEchoCli()
+bool TCPCli::StartEchoCli(OBindParams* obp)
 {
-	OBindParams obp;
-	obp._Address = "DESKTOP-CTQ37B5";
-	obp._Address = "127.0.0.1";
-	obp._Port = 11999;
-	OConnectRemoteAddr(&obp);
+	
+	OConnectRemoteAddr(obp);
 	char sendline[4096];
 	char recvline[4096];
+	memset(sendline, 0, 4096);
+	memset(sendline, 0, 4096);
 	char	*rptr;
 	while ((rptr = fgets(sendline, 4096, stdin)) != NULL)// º¸»ÎEOF <CTRL + D> fgets() ∑µªÿø’÷∏’Î
 	{
@@ -38,6 +42,8 @@ bool TCPCli::StartEchoCli()
 		}
 		
 		fputs(recvline, stdout);
+		memset(sendline, 0, 4096);
+		memset(sendline, 0, 4096);
 	}
 	return true;
 }

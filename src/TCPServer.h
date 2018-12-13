@@ -9,9 +9,10 @@ class TCPSrv : public OTCPSocketBase
 {
 public:
 	TCPSrv();
+	TCPSrv(FamilyType ft);
 	~TCPSrv();
 
-	bool StartEchoSrv();
+	bool StartEchoSrv(OBindParams* obp);
 };
 
 #define MAXPACKETSIZE 4096
