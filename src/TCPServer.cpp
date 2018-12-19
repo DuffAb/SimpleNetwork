@@ -8,11 +8,14 @@ void sig_child(int signo);
 
 TCPSrv::TCPSrv()
 {
+	_SockListener = NULL;
+	_SockClienter.clear();
 }
 
 TCPSrv::TCPSrv(FamilyType ft)
 {
-	_AF_XXX = ft;
+	_SockListener = new OTCPSocket(ft);
+	_SockClienter.clear();
 }
 
 TCPSrv::~TCPSrv()
@@ -21,17 +24,21 @@ TCPSrv::~TCPSrv()
 
 bool TCPSrv::StartEchoSrv(OBindParams* obp)
 {
+	
+	_SockListener->OBindLocalAddr(obp);
+	_SockListener->OListen();
+#ifdef __linux__
 	OSIGParams osp;
-	OBindLocalAddr(obp);
-	OListen();
 	osp.signo = O_SIGCHLD;
 	osp.handler = sig_child;
-	OSetSIGHandler(&osp);
+	_SockListener->OSetSIGHandler(&osp);
+#endif
+	
 	SocketHandle clientfd;
 	while (true)
 	{
 		size_t n = 0;
-		if ((clientfd = OAccept()) < 0)
+		if ((clientfd = _SockListener->OAccept()) < 0)
 		{
 			if (errno == EINTR)// 自己重启被中断的系统调用
 			{
@@ -78,6 +85,64 @@ bool TCPSrv::StartEchoSrv(OBindParams* obp)
 #endif
 	}
 	
+	return true;
+}
+
+
+
+class MyTask : public OTask
+{
+public:
+	MyTask() : OTask(0) {  }
+public:
+	virtual void ORun(int clientsocket);
+};
+
+void MyTask::ORun(int clientsocket)
+{
+	cout << "MyTask id = " << OTaskId()  << "client socket = " << clientsocket << endl;
+	size_t n = 0;
+
+	char buf[4096];
+	memset(buf, 0, 4096);
+	if((n = recv(clientsocket, buf, 4096, 0)) > 0)
+	{
+		fputs(buf, stdout);
+		send(clientsocket, buf, 4096, 0);
+		memset(buf, 0, 4096);
+	}
+}
+
+bool TCPSrv::StartEchoSrvNonBlockSelect(OBindParams * obp)
+{
+	int nready = 0;
+	size_t n = 0;
+	MyTask *srvTask = new MyTask();
+	_SockListener->OBindLocalAddr(obp);
+	_SockListener->OListen();
+
+	SocketHandle clientfd;
+	OTCPSocketPollState pstate;
+	pstate.OAdd(_SockListener);
+	while (true)
+	{
+		if (pstate.OPoll())
+		{
+			clientfd = pstate.OHandleEvent(_SockListener, srvTask);
+			if (clientfd != INVALID_SOCKET)
+			{
+				OTCPSocket *cli = new OTCPSocket(_SockListener->_AF_XXX, clientfd);
+				_SockClienter.push_back(cli);
+				pstate.OAdd(cli);
+			}
+			
+			for (int i = 0; i < _SockClienter.size(); ++i)
+			{
+				pstate.OHandleEvent(_SockClienter.at(i), srvTask);
+			}
+		}
+	}
+
 	return true;
 }
 

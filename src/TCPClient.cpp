@@ -4,15 +4,14 @@
 #endif
 
 
-
-
 TCPCli::TCPCli()
 {
+	_SockConnect = NULL;
 }
 
 TCPCli::TCPCli(FamilyType ft)
 {
-	_AF_XXX = ft;
+	_SockConnect = new OTCPSocket(ft);
 }
 
 TCPCli::~TCPCli()
@@ -22,7 +21,7 @@ TCPCli::~TCPCli()
 bool TCPCli::StartEchoCli(OBindParams* obp)
 {
 	
-	OConnectRemoteAddr(obp);
+	_SockConnect->OConnectRemoteAddr(obp);
 	char sendline[4096];
 	char recvline[4096];
 	memset(sendline, 0, 4096);
@@ -30,13 +29,14 @@ bool TCPCli::StartEchoCli(OBindParams* obp)
 	char	*rptr;
 	while ((rptr = fgets(sendline, 4096, stdin)) != NULL)// º¸»ÎEOF <CTRL + D> fgets() ∑µªÿø’÷∏’Î
 	{
-		send(_TheSocket, sendline, 4096, 0);
+		_SockConnect->OSend(sendline, 4096);
 		if (sendline[0] == 'q')
 		{
 			return true;
 		}
 
-		if (recv(_TheSocket, recvline, 4096, 0) == 0)
+		;
+		if (_SockConnect->ORecv(recvline, 4096) == 0)
 		{
 			std::cout << "server terminated prematurely\n";
 		}

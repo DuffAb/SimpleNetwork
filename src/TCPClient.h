@@ -6,7 +6,7 @@
 #include "Wrap.h"
 using namespace std;
 
-class TCPCli : public OTCPSocketBase
+class TCPCli
 {
 public:
 	TCPCli();
@@ -14,6 +14,8 @@ public:
 	~TCPCli();
 
 	bool StartEchoCli(OBindParams* obp);
+private:
+	OTCPSocket* _SockConnect;
 };
 
 

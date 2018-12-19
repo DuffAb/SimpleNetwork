@@ -22,8 +22,10 @@
     <ClInclude Include="..\..\src\CrossPlatform.h" />
     <ClInclude Include="..\..\src\CrossPlatformUtil.h" />
     <ClInclude Include="..\..\src\OSocket.h" />
+    <ClInclude Include="..\..\src\OTask.h" />
     <ClInclude Include="..\..\src\TCPClient.h" />
     <ClInclude Include="..\..\src\Wrap.h" />
+    <ClInclude Include="OWin32Socket.h" />
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="..\..\example-client\client.cpp" />

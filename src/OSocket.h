@@ -10,6 +10,7 @@ Authors     :   defeng.liang
 #define OTCP_BASE_H_
 #include <string>
 #include "CrossPlatform.h"
+#include "OTask.h"
 typedef void (*sighandler_t)(int);	/* for signal handlers */
 using namespace std;
 
@@ -88,12 +89,13 @@ struct OSIGParams {
 	sighandler_t  handler;
 };
 
-class OTCPSocketBase : public OBerkleySocket
+class OTCPSocket : public OBerkleySocket
 {
 public:
-	OTCPSocketBase();
-	OTCPSocketBase(FamilyType ft);
-	~OTCPSocketBase();
+	OTCPSocket();
+	OTCPSocket(FamilyType ft);
+	OTCPSocket(FamilyType ft, SocketHandle handle);
+	~OTCPSocket();
 
 public:
 	virtual SocketHandle OBindLocalAddr(OBindParams* pBindParams);
@@ -105,7 +107,7 @@ public:
 	virtual SocketHandle OAccept();
 	virtual int          OConnectRemoteAddr(OBindParams* pBindParams);
 	virtual int          OSend(const void* pData, int bytes);
-	virtual int          ORecv(uint8_t* pData, int bytesRead);
+	virtual int          ORecv(char* pData, int bytesRead);
 
 	// 设置系统信号处理函数
 	sighandler_t OSetSIGHandler(OSIGParams* osig);
@@ -115,8 +117,28 @@ private:
 	sockaddr_in6 OSetAddr6(OBindParams* pBindParams);
 
 	
-protected:
-	bool _IsListenSocket;
+public:
+	bool _IsListenSocket;  // 不是<监听套接字>就是<外来套接字>
+};
+
+// OTCPSocketPollState
+// Polls multiple blocking TCP sockets at once
+class OTCPSocketPollState
+{
+public:
+	fd_set _readFD;
+	fd_set _exceptionFD;
+	fd_set _writeFD;
+
+	fd_set _allFD;
+	SocketHandle _largestDescriptor;
+
+public:
+	OTCPSocketPollState();
+	bool OIsValid() const;
+	void OAdd(OTCPSocket* tcpSocket, bool bexception = false);
+	bool OPoll(long usec = 30000, long seconds = 0);
+	SocketHandle OHandleEvent(OTCPSocket* tcpSocket, OTask* task);
 };
 
 #endif  /*OTCP_BASE_H_*/

@@ -57,19 +57,26 @@ void OBerkleySocket::OClose()
 	}
 }
 
-OTCPSocketBase::OTCPSocketBase()
+OTCPSocket::OTCPSocket() : _IsListenSocket(false)
 {
-	_AF_XXX = FamilyType_IPV4;
+	_AF_XXX = FamilyType_None;
 	OWSAStartupSingleton::AddRef();
 }
 
-OTCPSocketBase::OTCPSocketBase(FamilyType ft)
+OTCPSocket::OTCPSocket(FamilyType ft) : _IsListenSocket(false)
 {
 	_AF_XXX = ft;
 	OWSAStartupSingleton::AddRef();
 }
 
-OTCPSocketBase::~OTCPSocketBase()
+OTCPSocket::OTCPSocket(FamilyType ft, SocketHandle handle) : _IsListenSocket(false)
+{
+	_AF_XXX = ft;
+	_TheSocket = handle;
+	OWSAStartupSingleton::AddRef();
+}
+
+OTCPSocket::~OTCPSocket()
 {
 	OWSAStartupSingleton::DeRef();
 }
@@ -84,7 +91,7 @@ OTCPSocketBase::~OTCPSocketBase()
 //   sighandler_t 代表的就是 返回值是void，有一个int参数的函数指针
 // 4.最后就成了这样
 //  sighandler_t signal(int signo, sighandler_t handler);
-sighandler_t OTCPSocketBase::OSetSIGHandler(OSIGParams* osig)
+sighandler_t OTCPSocket::OSetSIGHandler(OSIGParams* osig)
 {
 	sighandler_t previousHandler = NULL;
 	int signo = 0;

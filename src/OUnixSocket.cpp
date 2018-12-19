@@ -19,17 +19,23 @@ void OBerkleySocket::OClose()
 	}
 }
 
-OTCPSocketBase::OTCPSocketBase()
+OTCPSocket::OTCPSocket()
 {
-	_AF_XXX = FamilyType_IPV4;
+	_AF_XXX = FamilyType_None;
 }
 
-OTCPSocketBase::OTCPSocketBase(FamilyType ft)
+OTCPSocket::OTCPSocket(FamilyType ft)
 {
 	_AF_XXX = ft;
 }
 
-OTCPSocketBase::~OTCPSocketBase()
+OTCPSocket::OTCPSocket(FamilyType ft, SocketHandle handle)
+{
+	_AF_XXX = ft;
+	_TheSocket = handle;
+}
+
+OTCPSocket::~OTCPSocket()
 {
 }
 
@@ -57,7 +63,7 @@ void sig_child(int signo)
 //   sighandler_t 代表的就是 返回值是void，有一个int参数的函数指针
 // 4.最后就成了这样
 //  sighandler_t signal(int signo, sighandler_t handler);
-sighandler_t OTCPSocketBase::OSetSIGHandler(OSIGParams* osig)
+sighandler_t OTCPSocket::OSetSIGHandler(OSIGParams* osig)
 {
 	struct sigaction	sigact, prvsigact;
 	int signo = 0;

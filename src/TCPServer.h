@@ -2,10 +2,11 @@
 #define TCP_SERVER_H
 
 #include "CrossPlatform.h"
+#include "OTask.h"
 #include "OSocket.h"
 using namespace std;
 
-class TCPSrv : public OTCPSocketBase
+class TCPSrv
 {
 public:
 	TCPSrv();
@@ -13,6 +14,10 @@ public:
 	~TCPSrv();
 
 	bool StartEchoSrv(OBindParams* obp);
+	bool StartEchoSrvNonBlockSelect(OBindParams* obp);
+private:
+	OTCPSocket*			_SockListener;
+	vector<OTCPSocket*> _SockClienter;
 };
 
 #define MAXPACKETSIZE 4096

@@ -36,7 +36,7 @@ int32_t OBerkleySocket::OGetSockname(sockaddr * pSaOut, socklen_t* salen)
 	return i;
 }
 
-sockaddr_in OTCPSocketBase::OSetAddr4(OBindParams * pBindParams)
+sockaddr_in OTCPSocket::OSetAddr4(OBindParams * pBindParams)
 {
 	static sockaddr_in sa4;
 	memset(&sa4, 0, sizeof(sa4));
@@ -58,7 +58,7 @@ sockaddr_in OTCPSocketBase::OSetAddr4(OBindParams * pBindParams)
 }
 
 // 给bind函数指定要绑定的IP地址和/或端口号产生的结果
-sockaddr_in6 OTCPSocketBase::OSetAddr6(OBindParams * pBindParams)
+sockaddr_in6 OTCPSocket::OSetAddr6(OBindParams * pBindParams)
 {
 	static sockaddr_in6 sa6;
 	memset(&sa6, 0, sizeof(sa6));
@@ -82,7 +82,7 @@ sockaddr_in6 OTCPSocketBase::OSetAddr6(OBindParams * pBindParams)
 	return sa6;
 }
 
-SocketHandle OTCPSocketBase::OBindLocalAddr(OBindParams* pBindParams)
+SocketHandle OTCPSocket::OBindLocalAddr(OBindParams* pBindParams)
 {
 	int ret = 0;
 	if (_AF_XXX == FamilyType_IPV4)
@@ -107,7 +107,7 @@ SocketHandle OTCPSocketBase::OBindLocalAddr(OBindParams* pBindParams)
 	return _TheSocket;
 }
 
-int OTCPSocketBase::OListen()
+int OTCPSocket::OListen()
 {
 	// (1)未完成连接队列				(2)已完成连接队列
 	//    SYN_RCVD状态				   ESTABLISHED状态
@@ -131,7 +131,7 @@ int OTCPSocketBase::OListen()
 	return ret;
 }
 
-SocketHandle OTCPSocketBase::OAccept()
+SocketHandle OTCPSocket::OAccept()
 {
 	SocketHandle _ClientSocket;
 
@@ -151,7 +151,7 @@ SocketHandle OTCPSocketBase::OAccept()
 	return _ClientSocket;
 }
 
-int OTCPSocketBase::OConnectRemoteAddr(OBindParams* pBindParams)
+int OTCPSocket::OConnectRemoteAddr(OBindParams* pBindParams)
 {
 	int ret = 0;
 	if (_AF_XXX == FamilyType_IPV4)
@@ -192,7 +192,7 @@ int OTCPSocketBase::OConnectRemoteAddr(OBindParams* pBindParams)
 	return true;
 }
 
-int OTCPSocketBase::OSend(const void * pData, int bytes)
+int OTCPSocket::OSend(const void * pData, int bytes)
 {
 	if (bytes <= 0)
 	{
@@ -204,7 +204,105 @@ int OTCPSocketBase::OSend(const void * pData, int bytes)
 	}
 }
 
-int OTCPSocketBase::ORecv(uint8_t * pData, int bytesRead)
+int OTCPSocket::ORecv(char* pData, int bytesRead)
 {
-	return recv(_TheSocket, (char*)pData, bytesRead, 0);
+	return recv(_TheSocket, pData, bytesRead, 0);
+}
+
+
+
+OTCPSocketPollState::OTCPSocketPollState()
+{
+	FD_ZERO(&_readFD);
+	FD_ZERO(&_exceptionFD);
+	FD_ZERO(&_writeFD);
+	FD_ZERO(&_allFD);
+	_largestDescriptor = INVALID_SOCKET;
+}
+bool OTCPSocketPollState::OIsValid() const
+{
+	return _largestDescriptor != INVALID_SOCKET;
+}
+void OTCPSocketPollState::OAdd(OTCPSocket* tcpSocket, bool bexception)
+{
+	if (!tcpSocket)
+	{
+		return;
+	}
+
+	SocketHandle handle = tcpSocket->OGetSocketHandle();
+
+	if (_largestDescriptor == INVALID_SOCKET ||	_largestDescriptor < handle)
+	{
+		_largestDescriptor = handle;
+	}
+
+	FD_SET(handle, &_allFD);
+
+	/*if (bexception)
+	{
+		FD_SET(handle, &_exceptionFD);
+	}
+
+
+	if (!tcpSocket->_IsListenSocket)
+	{
+		FD_SET(handle, &_writeFD);
+	}*/
+}
+
+bool OTCPSocketPollState::OPoll(long usec, long seconds)
+{
+	int nready = 0;
+	timeval tv;
+	tv.tv_sec = seconds;
+	tv.tv_usec = usec;
+
+	_readFD = _allFD;
+
+	nready = (int)select((int)_largestDescriptor + 1, &_readFD, NULL, NULL, NULL);
+	
+	return nready > 0;
+}
+SocketHandle OTCPSocketPollState::OHandleEvent(OTCPSocket* tcpSocket, OTask* task)
+{
+	SocketHandle newSock = INVALID_SOCKET;
+	if (!tcpSocket)
+	{
+		return newSock;
+	}
+
+	SocketHandle handle = tcpSocket->OGetSocketHandle();
+
+	if (FD_ISSET(handle, &_readFD))
+	{
+		if (tcpSocket->_IsListenSocket) // 监听套接字可读，即有客户连接到达
+		{
+			cout << "client socket is connect ... " << endl;
+			struct sockaddr_storage sockAddr;
+			socklen_t sockAddrSize = sizeof(sockAddr);
+
+			newSock = accept(handle, (sockaddr*)&sockAddr, (socklen_t*)&sockAddrSize);
+			if (newSock > 0)
+			{
+				return newSock;
+			}
+			
+		}
+		else // 客户套接字可读，执行与客户程序的任务
+		{
+			task->ORun(handle);
+		}
+	}
+
+	if (!tcpSocket->_IsListenSocket && FD_ISSET(handle, &_writeFD))
+	{
+		task->ORun(handle);
+	}
+
+	if (FD_ISSET(handle, &_exceptionFD))
+	{
+		tcpSocket->OClose();
+	}
+	return newSock;
 }

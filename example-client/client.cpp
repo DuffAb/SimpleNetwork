@@ -23,7 +23,7 @@ void sig_exit(int s)
 int main(int argc, char *argv[])
 {
 	int mode = 0;
-	TCPCli cli4;
+	TCPCli cli4(FamilyType_IPV4);
 	TCPCli cli6(FamilyType_IPV6);
 	printf("select client mode: \n"
 		"\t0: echo IPv4 client\n"
@@ -37,9 +37,9 @@ int main(int argc, char *argv[])
 		switch (mode)
 		{
 		case 0:
-			obp._Address = "192.168.200.118";
+			//obp._Address = "192.168.200.118";
 			//obp._Address = "DESKTOP-CTQ37B5";
-			//obp._Address = "127.0.0.1";
+			obp._Address = "127.0.0.1";
 			cli4.StartEchoCli(&obp);
 			break;
 		case 1:
