@@ -192,6 +192,58 @@ int OTCPSocket::OConnectRemoteAddr(OBindParams* pBindParams)
 	return true;
 }
 
+void OTCPSocket::OListenOnSrv(OBindParams * pBindParams)
+{
+	int ret = 0;
+	const int on = 1;
+	struct addrinfo hints;
+	struct addrinfo *result;
+	struct addrinfo *res;
+	
+	memset(&hints, 0, sizeof(addrinfo));
+	hints.ai_flags    = AI_PASSIVE;
+	hints.ai_family   = AF_UNSPEC;
+	hints.ai_socktype = SOCK_STREAM;
+
+	ret = getaddrinfo(pBindParams->hostname, pBindParams->servname, &hints, &result);
+	if (ret != 0)
+	{
+		std::cout << "getaddrinfo function failed!" << std::endl;
+		return ;
+	}
+
+	res = result;
+	do 
+	{
+		_TheSocket = socket(res->ai_family, res->ai_socktype, res->ai_protocol);
+		if (_TheSocket < 0)
+		{
+			continue;
+		}
+		setsockopt(_TheSocket, SOL_SOCKET, SO_REUSEADDR, (const char*)&on, sizeof(on));
+		ret = bind(_TheSocket, res->ai_addr, res->ai_addrlen);
+		if (ret == 0)
+		{
+			break;
+		}
+		OClose();
+
+	} while ((res = result->ai_next) != NULL);
+
+	if (res == NULL)
+	{
+		std::cout << "OListenOnSrv error for " << pBindParams->hostname << "  " << pBindParams->servname << std::endl;
+	}
+	OListen();
+	freeaddrinfo(result);
+
+	return ;
+}
+
+void OTCPSocket::OConnetToSrv(OBindParams * pBindParams)
+{
+}
+
 int OTCPSocket::OSend(const void * pData, int bytes)
 {
 	if (bytes <= 0)

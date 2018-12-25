@@ -23,6 +23,10 @@ public:
 public:
 	uint16_t _Port;
 	string   _Address;
+
+	// 用于协议无关的网络编程
+	const char* hostname;
+	const char* servname;
 };
 
 // Types of network transport
@@ -106,6 +110,10 @@ public:
 	// 返回一个已经连接的套接字，并获取客户端的地址信息
 	virtual SocketHandle OAccept();
 	virtual int          OConnectRemoteAddr(OBindParams* pBindParams);
+
+	virtual void         OListenOnSrv(OBindParams* pBindParams);
+	virtual void         OConnetToSrv(OBindParams* pBindParams);
+
 	virtual int          OSend(const void* pData, int bytes);
 	virtual int          ORecv(char* pData, int bytesRead);
 

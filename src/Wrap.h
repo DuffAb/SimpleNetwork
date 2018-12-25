@@ -5,7 +5,31 @@
 
 using namespace std;
 
-// 解析器函数，接触DNS服务器，把主机名映射成IPv4地址，只能返回IPv4地址
+int OListen(SocketHandle sock)
+{
+	// (1)未完成连接队列				(2)已完成连接队列
+	//    SYN_RCVD状态				   ESTABLISHED状态
+	int ret = 0;
+	int backlog = SOMAXCONN;
+	char* ptr;
+	if ((ptr = getenv("LISTENQ")) != NULL)
+	{
+		backlog = atoi(ptr);
+	}
+
+	ret = listen(sock, backlog);
+	if (ret < 0)
+	{
+		// listen 返回值的错误处理
+	}
+	else
+	{
+		_IsListenSocket = true;
+	}
+	return ret;
+}
+
+// 解析器函数，接触DNS服务器，把主机名映射成IPv4地址，只支持IPv4
 static void OGetHostByNameV4(const char* hostname, struct sockaddr* sa)
 {
 	//struct  hostent {
@@ -53,16 +77,6 @@ static void OGetHostByNameV4(const char* hostname, struct sockaddr* sa)
 		}
 		break;
 	}
-	//case AF_INET6:{
-	//	struct sockaddr_in6 * sa6 = (struct sockaddr_in6 *)sa;
-	//	for (; *addr_list != NULL; addr_list++)
-	//	{
-	//		// 将数值格式转化为点分十进制的ip地址格式 返回值：若成功则为指向结构的指针，若出错则为NULL
-	//		cout << "IPv6 address: " << inet_ntop(ht->h_addrtype, *addr_list, strTmp, sizeof(strTmp)) << endl;
-	//		//sa6->sin6_addr = **addr_list;
-	//	}
-	//	break;
-	//}
 	default:
 		cout << "unknown address type\n";
 		break;
@@ -71,14 +85,25 @@ static void OGetHostByNameV4(const char* hostname, struct sockaddr* sa)
 	return ;
 }
 
-// 解析器函数，接触DNS服务器，把IPv4地址映射成主机名
-static struct hostent* wrap_gethostbyaddr(const char* addr, socklen_t len, int family)
+// 解析器函数，接触DNS服务器，把二进制IPv4地址映射成主机名，只支持IPv4
+static string OGetHostByAddrV4(struct sockaddr* addr, socklen_t len)
 {
-	struct hostent* ht = NULL;
 	char **pp = NULL;
+	struct hostent* ht = NULL;
 	char strTmp[INET_ADDRSTRLEN];
-	// addr 参数实际上不是char *类型，而是一个指向存放IPv4地址的某个in_addr结构指针
-	ht = gethostbyaddr(addr, len, family);
+	if (addr->sa_family == AF_INET)
+	{
+		sockaddr_in* addr4 = (sockaddr_in*)addr;
+		in_addr* addr_in = &(addr4->sin_addr);
+		// addr 参数实际上不是char *类型，而是一个指向存放IPv4地址的某个in_addr结构指针
+		ht = gethostbyaddr((const char*)addr_in, 4, AF_INET);
+
+	}
+	else
+	{
+		return "";
+	}
+	
 	switch (h_errno)
 	{
 	case HOST_NOT_FOUND:
@@ -86,7 +111,7 @@ static struct hostent* wrap_gethostbyaddr(const char* addr, socklen_t len, int f
 	case NO_RECOVERY:
 	case NO_DATA:       // 表示指定的名字有效，但是没有A记录
 		cout << UW_ErrMessage(h_errno) << endl; // 输出相应的错误说明
-		return ht;
+		return "";
 	}
 	cout << "official hostname: " << ht->h_name << endl;
 
@@ -111,7 +136,7 @@ static struct hostent* wrap_gethostbyaddr(const char* addr, socklen_t len, int f
 		break;
 	}
 
-	return ht;
+	return ht->h_name;
 }
 
 static struct servent* wrap_getservbyname(const char* servname, const char* protoname)
@@ -149,10 +174,12 @@ static struct servent* wrap_getservbyname(const char* servname, const char* prot
 	return st;
 }
 
+// Windows:获取的是 C:\WINDOWS\system32\drivers\etc\services 文件的信息
+// Linux  :获取的是 /etc/services 文件的信息
 static struct servent* wrap_getservbyport(int port, const char* protoname)
 {
 	struct servent *st;
-	st = getservbyport(port, protoname);
+	st = getservbyport(htons(port), protoname);
 	if (st == NULL)
 	{
 		return st;
@@ -184,7 +211,7 @@ static int wrap_getaddrinfo(const char* hostname, const char* service, const str
 	//struct addrinfo
 	//{
 	//	int                 ai_flags;       // AI_PASSIVE, AI_CANONNAME, AI_NUMERICHOST
-	//	int                 ai_family;      // PF_xxx
+	//	int                 ai_family;      // PF_xxx 或 AF_xxx
 	//	int                 ai_socktype;    // SOCK_xxx
 	//	int                 ai_protocol;    // 0 or IPPROTO_xxx for IPv4 and IPv6
 	//	size_t              ai_addrlen;     // Length of ai_addr
@@ -192,9 +219,9 @@ static int wrap_getaddrinfo(const char* hostname, const char* service, const str
 	//	struct sockaddr *   ai_addr;        // Binary address
 	//	struct addrinfo *   ai_next;        // Next structure in linked list
 	//}
-	// hostname参数是一个主机名或地址串（IPv4 / IPv6）
-	// service参数是一个服务名或十进制端口数串
-	// hints参数可以是空指针或一个指向某个addrinfo结构体的指针
+	// hostname:参数是一个主机名或地址串（IPv4 / IPv6）
+	// service :参数是一个服务名或十进制端口数串
+	// hints   :参数可以是空指针或一个指向某个addrinfo结构体的指针
 	int ret = 0;
 	ret = getaddrinfo(hostname, service, hints, result);
 }
