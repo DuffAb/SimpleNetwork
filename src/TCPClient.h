@@ -1,36 +1,38 @@
 #ifndef TCP_CLIENT_H
 #define TCP_CLIENT_H
 
-#include <iostream>
-#include <stdio.h>
-#include <stdlib.h>
-#include <unistd.h>
-#include <string.h>
-#include <sys/types.h>
-#include <sys/socket.h>
-#include <netinet/in.h>
-#include <arpa/inet.h>
-#include <netdb.h>
-#include <netdb.h> 
-#include <vector>
-
+#include "CrossPlatform.h"
+#include "OSocket.h"
+#include "Wrap.h"
 using namespace std;
+
+class TCPCli
+{
+public:
+	TCPCli();
+	TCPCli(FamilyType ft);
+	~TCPCli();
+
+	bool StartEchoCli(OBindParams* obp);
+private:
+	OTCPSocket* _SockConnect;
+};
+
 
 class TCPClient
 {
-  private:
-    int sock;
-    std::string address;
-    int port;
-    struct sockaddr_in server;
-
-  public:
-    TCPClient();
-    bool setup(string address, int port);
-    bool Send(string data);
-    string receive(int size = 4096);
-    string read();
-    void exit();
+private:
+	SocketHandle _sock;
+	std::string address;
+	int _ServerPort;
+	struct sockaddr_in _ServerAddr;
+public:
+	TCPClient();
+	bool setup(string address, int port);
+	bool SetUpWithHostName(const char* hostname, const char* servname, const char* proto);
+	bool Send(string data);
+	string receive(int size = 4096);
+	string read();
+	void exit();
 };
-
-#endif
+#endif  /*TCP_CLIENT_H*/

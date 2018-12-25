@@ -1,31 +1,43 @@
 #ifndef TCP_SERVER_H
 #define TCP_SERVER_H
 
-#include <iostream>
-#include <vector>
-#include <stdio.h>
-#include <stdlib.h>
-#include <string.h>
-#include <unistd.h>
-#include <sys/types.h> 
-#include <sys/socket.h>
-#include <netinet/in.h>
-#include <string.h>
-#include <arpa/inet.h>
-#include <pthread.h>
-
+#include "CrossPlatform.h"
+#include "OTask.h"
+#include "OSocket.h"
 using namespace std;
 
-#define MAXPACKETSIZE 4096
+class TCPSrv
+{
+public:
+	TCPSrv();
+	TCPSrv(FamilyType ft);
+	~TCPSrv();
 
+	bool StartEchoSrv(OBindParams* obp);
+	bool StartEchoSrvNonBlockSelect(OBindParams* obp);
+private:
+	OTCPSocket*			_SockListener;
+	vector<OTCPSocket*> _SockClienter;
+};
+
+#define MAXPACKETSIZE 4096
 class TCPServer
 {
-	public:
-	int sockfd, newsockfd, n, pid;
-	struct sockaddr_in serverAddress;
-	struct sockaddr_in clientAddress;
+public:
+	SocketHandle sockfd, newsockfd, n, pid;
+	int _Port;
+	
+	string _LocalAddrIPv4;
+	struct sockaddr_in _localAddrIPv4;
+	struct sockaddr_in _clientAddrIPv4;
+
+#ifdef _WIN32
+	DWORD     _dThreadId;
+	HANDLE    serverThread;
+#elif __linux__
 	pthread_t serverThread;
-	char msg[ MAXPACKETSIZE ];
+#endif
+	char msg[MAXPACKETSIZE];
 	static string Message;
 
 	void setup(int port);
@@ -35,8 +47,13 @@ class TCPServer
 	void detach();
 	void clean();
 
-	private:
+private:
+#ifdef _WIN32
+	static DWORD WINAPI Task(LPVOID arg);
+#elif __linux__	// linux
 	static void * Task(void * argv);
+#endif
+	
 };
 
-#endif
+#endif  /*TCP_SERVER_H*/
